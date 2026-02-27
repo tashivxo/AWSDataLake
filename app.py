@@ -82,17 +82,16 @@ with tabs[0]:
 with tabs[1]:
     st.header("Gender Participation Over Time")
     query = '''
-    SELECT Year, Season, Gender, COUNT(DISTINCT Athlete) as athlete_count
-    FROM olympic_db.processed_events
-    GROUP BY Year, Season, Gender
-    ORDER BY Year, Season;
-    '''
-        df = run_athena_query(query)
-        # Ensure 'Year' is numeric for filtering
-        df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
-        if season_filter != "All":
-            df = df[df["Season"] == season_filter]
-        df = df[(df["Year"] >= year_range[0]) & (df["Year"] <= year_range[1])]
+SELECT Year, Season, Gender, COUNT(DISTINCT Athlete) as athlete_count
+FROM olympic_db.processed_events
+GROUP BY Year, Season, Gender
+ORDER BY Year, Season;
+'''
+    df = run_athena_query(query)
+    df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+    if season_filter != "All":
+        df = df[df["Season"] == season_filter]
+    df = df[(df["Year"] >= year_range[0]) & (df["Year"] <= year_range[1])]
     if df.empty:
         st.info("No data available for the selected filter.")
     else:
@@ -171,14 +170,21 @@ with tabs[4]:
     if df.empty:
         st.info("No data available.")
     else:
+        # Convert year integers to datetime for px.timeline
+        df["first_appeared"] = pd.to_numeric(df["first_appeared"], errors="coerce")
+        df["last_appeared"] = pd.to_numeric(df["last_appeared"], errors="coerce")
+        df["start_date"] = pd.to_datetime(df["first_appeared"], format="%Y")
+        df["end_date"] = pd.to_datetime(df["last_appeared"], format="%Y")
         fig = px.timeline(
             df,
-            x_start="first_appeared",
-            x_end="last_appeared",
+            x_start="start_date",
+            x_end="end_date",
             y="Sport",
             color="editions",
-            title="Sport Evolution Over Decades"
+            title="Sport Evolution Over Decades",
+            hover_data=["first_appeared", "last_appeared", "disciplines"]
         )
+        fig.update_yaxes(autorange="reversed")
         st.plotly_chart(fig, use_container_width=True)
 
 # 6. Enriched Medals Explorer
