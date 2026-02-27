@@ -87,10 +87,12 @@ with tabs[1]:
     GROUP BY Year, Season, Gender
     ORDER BY Year, Season;
     '''
-    df = run_athena_query(query)
-    if season_filter != "All":
-        df = df[df["Season"] == season_filter]
-    df = df[(df["Year"] >= year_range[0]) & (df["Year"] <= year_range[1])]
+        df = run_athena_query(query)
+        # Ensure 'Year' is numeric for filtering
+        df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+        if season_filter != "All":
+            df = df[df["Season"] == season_filter]
+        df = df[(df["Year"] >= year_range[0]) & (df["Year"] <= year_range[1])]
     if df.empty:
         st.info("No data available for the selected filter.")
     else:
